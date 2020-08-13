@@ -44,7 +44,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         DaggerAppComponent.builder()
                 .retrofitModule(new RetrofitModule())
-                .connectivityManagerModule(new ConnectivityManagerModule(getApplication()))
+                .connectivityManagerModule(new ConnectivityManagerModule(this))
                 .build()
                 .inject(this);
     }

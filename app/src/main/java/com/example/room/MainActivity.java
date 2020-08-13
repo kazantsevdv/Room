@@ -1,6 +1,5 @@
 package com.example.room;
 
-import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Bundle;
@@ -12,25 +11,27 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.room.di.ConnectivityManagerModule;
+import com.example.room.di.DaggerAppComponent;
+import com.example.room.di.RetrofitModule;
+
 import java.util.ArrayList;
 import java.util.List;
+
+import javax.inject.Inject;
 
 import io.reactivex.Single;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.disposables.CompositeDisposable;
 import io.reactivex.observers.DisposableSingleObserver;
 import io.reactivex.schedulers.Schedulers;
-import retrofit2.Retrofit;
-import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
-import retrofit2.converter.gson.GsonConverterFactory;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
-    Button btnLoad;
-    Button btnSaveAllSugar;
-    Button btnSelectAllSugar;
-    Button btnDeleteAllSugar;
+    @Inject
     RestAPI restAPI;
-    List<Model> modelList = new ArrayList<>();
+    @Inject
+    ConnectivityManager connectivityManager;
+    private List<Model> modelList = new ArrayList<>();
     private CompositeDisposable disposable = new CompositeDisposable();
     private TextView mInfoTextView;
     private ProgressBar progressBar;
@@ -39,12 +40,22 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        initView();
+
+        DaggerAppComponent.builder()
+                .retrofitModule(new RetrofitModule())
+                .connectivityManagerModule(new ConnectivityManagerModule(getApplication()))
+                .build()
+                .inject(this);
+    }
+
+    private void initView() {
         mInfoTextView = findViewById(R.id.tvLoad);
         progressBar = findViewById(R.id.progressBar);
-        btnLoad = findViewById(R.id.btnLoad);
-        btnSaveAllSugar = findViewById(R.id.btnSaveAllSugar);
-        btnSelectAllSugar = findViewById(R.id.btnSelectAllSugar);
-        btnDeleteAllSugar = findViewById(R.id.btnDeleteAllSugar);
+        Button btnLoad = findViewById(R.id.btnLoad);
+        Button btnSaveAllSugar = findViewById(R.id.btnSaveAllSugar);
+        Button btnSelectAllSugar = findViewById(R.id.btnSelectAllSugar);
+        Button btnDeleteAllSugar = findViewById(R.id.btnDeleteAllSugar);
         btnLoad.setOnClickListener(this);
         btnSaveAllSugar.setOnClickListener(this);
         btnSelectAllSugar.setOnClickListener(this);
@@ -62,19 +73,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         switch (v.getId()) {
             case R.id.btnLoad:
                 mInfoTextView.setText("");
-
-
-                Retrofit retrofit = new Retrofit.Builder()
-                        .baseUrl("https://api.github.com/") // Обратить внимание на слеш в базовом адресе
-                        .addConverterFactory(GsonConverterFactory.create())
-                        .addCallAdapterFactory(RxJava2CallAdapterFactory.create())
-
-                        .build();
-                restAPI = retrofit.create(RestAPI.class);
-                // Подготовили вызов на сервер
                 Single<List<Model>> call = restAPI.loadUsers();
-                ConnectivityManager connectivityManager =
-                        (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+
                 NetworkInfo networkinfo = connectivityManager.getActiveNetworkInfo();
 
                 if (networkinfo != null && networkinfo.isConnected()) {
@@ -86,7 +86,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             case R.id.btnSaveAllSugar:
 
-                disposable.add(App.instance.getDatabase().userDAO().insert(modelList)
+                disposable.add(((App) getApplicationContext()).getDatabase().userDAO().insert(modelList)
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
                         .doOnSubscribe((disposable) -> {
@@ -99,7 +99,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 );
                 break;
             case R.id.btnSelectAllSugar:
-                disposable.add(App.instance.getDatabase().userDAO().getAll()
+                disposable.add(((App) getApplicationContext()).getDatabase().userDAO().getAll()
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
                         .doOnSubscribe((disposable) -> {
@@ -125,7 +125,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         }));
                 break;
             case R.id.btnDeleteAllSugar:
-                disposable.add(App.instance.getDatabase().userDAO().delete()
+                disposable.add(((App) getApplicationContext()).getDatabase().userDAO().delete()
                         .subscribeOn(Schedulers.io())
                         .observeOn(AndroidSchedulers.mainThread())
                         .doOnSubscribe((disposable) -> {

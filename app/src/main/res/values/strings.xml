@@ -1,3 +1,13 @@
 <resources>
     <string name="app_name">Room</string>
+    <string name="err_load">Ошибка загрузки данных</string>
+    <string name="err_db">\"ошибка  БД: \"</string>
+    <string name="id_save_data">\id Сохраненых данных = \"</string>
+    <string name="vol_del_rec">\"Записей удалено = \"</string>
+    <string name="no_data">Нет данных в БД</string>
+    <string name="no_internet">Подключите интернет</string>
+    <string name="load">Загрузить из интернета</string>
+    <string name="sawe">Сохранить в БД</string>
+    <string name="read">Показать все</string>
+    <string name="delete">Удалить все</string>
 </resources>
